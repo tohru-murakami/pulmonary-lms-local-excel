@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="利用者が選択した日本呼吸器学会のExcelを端末内で読み込み、肺機能の予測値・正常下限値・Z-scoreを表示する教育用ツール">
+  <meta name="theme-color" content="#51346f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="肺機能LMS Excel">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; connect-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>肺機能 LMS リファレンス｜第5版 Excel読込版</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #352b43;
+      --muted: #746981;
+      --navy: #51346f;
+      --navy-2: #6b478b;
+      --teal: #a4562d;
+      --teal-soft: #f7e9df;
+      --sky: #f2edf7;
+      --line: #dfd5e8;
+      --paper: #faf8fc;
+      --white: #ffffff;
+      --warn: #9b5b13;
+      --warn-bg: #fff6e8;
+      --danger: #a23838;
+      --danger-bg: #fff0f0;
+      --shadow: 0 18px 50px rgba(81, 52, 111, .12);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 90% -10%, rgba(177, 111, 70, .17), transparent 32rem),
+        linear-gradient(180deg, #f4eff8 0, #fdfcfe 28rem, #faf8fc 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      overscroll-behavior-y: none;
+    }
+    button, input, select { font: inherit; touch-action: manipulation; }
+    button, select { cursor: pointer; }
+    .shell { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
+    header { padding: calc(22px + env(safe-area-inset-top)) 0 18px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-mark {
+      width: 46px; height: 46px; display: grid; place-items: center;
+      color: white; background: var(--navy); border-radius: 14px;
+      box-shadow: 0 10px 24px rgba(12, 55, 83, .22);
+    }
+    .brand-mark svg { width: 29px; height: 29px; }
+    .eyebrow { color: var(--teal); font-size: .78rem; font-weight: 800; letter-spacing: .12em; }
+    h1 { margin: 1px 0 0; color: var(--navy); font-size: clamp(1.45rem, 2.3vw, 2.1rem); line-height: 1.25; letter-spacing: -.025em; }
+    .lede { margin: 18px 0 0; max-width: 760px; color: var(--muted); }
+    .disclaimer-brief { margin: 10px 0 0; max-width: 860px; color: #665873; font-size: .8rem; }
+    .disclaimer-brief a { color: var(--teal); font-weight: 800; text-underline-offset: 3px; }
+    .install-note {
+      display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 0; padding: 12px 14px;
+      color: #5d4871; background: rgba(242,237,247,.88); border: 1px solid #d8c8e3; border-radius: 13px;
+      font-size: .78rem; line-height: 1.55;
+    }
+    .install-note svg { flex: 0 0 auto; width: 20px; height: 20px; margin-top: 1px; color: var(--teal); }
+    .install-note strong { color: var(--navy); }
+    .offline-note { display: none; margin-top: 10px; padding: 8px 12px; color: var(--warn); background: var(--warn-bg); border-radius: 10px; font-size: .76rem; }
+    .offline-note.show { display: block; }
+    .workspace { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel { background: rgba(255,255,255,.94); border: 1px solid rgba(190, 210, 220, .8); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .input-panel { position: sticky; top: 18px; overflow: hidden; }
+    .panel-head { padding: 22px 24px 18px; border-bottom: 1px solid var(--line); }
+    .panel-head h2, .section-head h2 { margin: 0; color: var(--navy); font-size: 1.08rem; }
+    .panel-head p, .section-head p { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
+    .form { padding: 20px 24px 24px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { margin-bottom: 15px; }
+    .field label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: .88rem; font-weight: 700; }
+    .unit { color: var(--muted); font-size: .76rem; font-weight: 600; }
+    input, select {
+      width: 100%; min-height: 46px; padding: 9px 12px; color: var(--ink);
+      background: #fff; border: 1px solid #bed0da; border-radius: 11px; outline: none;
+      transition: border .18s, box-shadow .18s;
+    }
+    input:focus, select:focus { border-color: var(--navy-2); box-shadow: 0 0 0 4px rgba(81,52,111,.14); }
+    input[aria-invalid="true"] { border-color: var(--danger); background: #fffafa; }
+    .hint { margin: -7px 0 14px; color: var(--muted); font-size: .75rem; }
+    .ratio-guide { margin: -5px 0 15px; padding: 11px 12px; color: #5b4a69; background: var(--sky); border-radius: 10px; font-size: .76rem; line-height: 1.55; }
+    .ratio-guide strong { display: block; color: var(--navy); font-size: .78rem; }
+    .ratio-guide span { display: block; margin-top: 3px; color: var(--teal); font-weight: 700; }
+    .actions { display: flex; gap: 10px; margin-top: 4px; }
+    .button {
+      min-height: 44px; padding: 8px 16px; border: 0; border-radius: 11px; font-weight: 800;
+    }
+    .button.primary { flex: 1; color: white; background: var(--navy); }
+    .button.secondary { color: var(--navy); background: var(--sky); }
+    .status { margin-top: 14px; padding: 11px 12px; border-radius: 10px; font-size: .78rem; line-height: 1.5; }
+    .status.ok { color: #694425; background: var(--teal-soft); }
+    .status.warn { color: var(--warn); background: var(--warn-bg); }
+    .status.error { color: var(--danger); background: var(--danger-bg); }
+    .workbook-box { margin-bottom: 18px; padding: 14px; border: 1px solid #d5c4e1; border-radius: 13px; background: #faf7fc; }
+    .workbook-box h3 { margin: 0; color: var(--navy); font-size: .92rem; }
+    .workbook-box p { margin: 5px 0 10px; color: var(--muted); font-size: .75rem; line-height: 1.55; }
+    .workbook-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .workbook-actions .button { min-height: 40px; }
+    .workbook-meta { margin-top: 10px; padding: 9px 10px; border-radius: 9px; color: #705020; background: #fff4de; font-size: .73rem; line-height: 1.5; overflow-wrap: anywhere; }
+    .workbook-meta.ready { color: #4e3963; background: #eee5f5; }
+    .privacy-seal { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; color: #6b478b; font-size: .72rem; font-weight: 800; }
+    .version-badge { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; color: #fff; background: var(--teal); font-size: .62rem; font-weight: 800; vertical-align: middle; }
+    fieldset[disabled] { opacity: .54; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .results-panel { padding: 22px; min-width: 0; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
+    .badge { padding: 5px 10px; color: #74401f; background: var(--teal-soft); border-radius: 99px; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .metric-cards { display: contents; }
+    .pattern-panel { min-height: 360px; padding: 19px; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: linear-gradient(160deg, #fff 35%, #f7fbfc); transition: transform .18s, border-color .18s, box-shadow .18s; }
+    .pattern-panel:hover, .pattern-panel:focus-within { transform: translateY(-2px); border-color: #b49ac8; box-shadow: 0 12px 28px rgba(81,52,111,.10); }
+    .pattern-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .pattern-head h3 { margin: 0; color: var(--navy); font-size: 1.1rem; }
+    .pattern-head p { margin: 3px 0 0; color: var(--muted); font-size: .78rem; }
+    .pattern-chart { display: block; width: 100%; height: 250px; margin-top: 9px; }
+    .pattern-caution { margin: 5px 0 0; color: #665873; font-size: .68rem; line-height: 1.45; text-align: center; }
+    .result-card {
+      position: relative; min-height: 360px; padding: 19px; overflow: hidden;
+      border: 1px solid var(--line); border-radius: 15px; background: linear-gradient(160deg, #fff 35%, #f7fbfc);
+      transition: transform .18s, border-color .18s, box-shadow .18s;
+    }
+    .result-card:hover, .result-card:focus-within { transform: translateY(-2px); border-color: #b49ac8; box-shadow: 0 12px 28px rgba(81,52,111,.10); }
+    .result-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .result-title h3 { margin: 0; color: var(--navy); font-size: 1.1rem; }
+    .info-button {
+      width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%;
+      color: var(--teal); background: var(--white); font-weight: 800;
+    }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
+    .metric span { display: block; color: var(--muted); font-size: .72rem; }
+    .metric strong { display: block; margin-top: 2px; color: var(--navy); font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+    .z-chip {
+      width: 100%; margin-top: 14px; padding: 9px 11px; display: flex; align-items: center; justify-content: space-between;
+      border-radius: 10px; color: var(--navy); background: var(--sky); text-align: left;
+    }
+    .z-chip span { color: var(--muted); font-size: .76rem; }
+    .z-chip strong { font-size: .96rem; font-variant-numeric: tabular-nums; }
+    .mini-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 14px; color: var(--muted); font-size: .72rem; }
+    .mini-chart-head strong { color: var(--teal); font-size: .88rem; font-variant-numeric: tabular-nums; }
+    .mini-chart { display: block; width: 100%; height: 150px; margin-top: 2px; }
+    .chart-note { margin: -2px 0 0; color: var(--muted); font-size: .68rem; text-align: center; }
+    .support { display: grid; grid-template-columns: 1.2fr .8fr; gap: 22px; margin-top: 22px; padding-bottom: 42px; }
+    .support .panel { padding: 22px 24px; box-shadow: 0 12px 34px rgba(81,52,111,.07); }
+    .disclaimer-panel { margin: -20px 0 26px; padding: 19px 24px; box-shadow: 0 12px 34px rgba(81,52,111,.07); }
+    .disclaimer-panel h2 { margin: 0 0 7px; color: var(--navy); font-size: 1.02rem; }
+    .disclaimer-panel p { margin: 0; color: var(--muted); font-size: .82rem; }
+    .support h2 { margin: 0 0 14px; color: var(--navy); font-size: 1.05rem; }
+    .glossary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 18px; }
+    .glossary div { padding: 9px 0; border-bottom: 1px solid var(--line); }
+    .glossary dt { color: var(--navy); font-weight: 800; }
+    .glossary dd { margin: 2px 0 0; color: var(--muted); font-size: .83rem; }
+    details { border-top: 1px solid var(--line); }
+    details:first-of-type { border-top: 0; }
+    summary { padding: 12px 0; color: var(--navy); font-weight: 800; cursor: pointer; }
+    details p { margin: -3px 0 14px; color: var(--muted); font-size: .83rem; }
+    .formula { padding: 12px; overflow-wrap: anywhere; color: #4a3b58; background: var(--sky); border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; line-height: 1.7; }
+    footer { padding: 0 0 calc(26px + env(safe-area-inset-bottom)); color: var(--muted); font-size: .75rem; }
+    footer a { color: var(--teal); font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    footer a:hover, footer a:focus { color: var(--navy); }
+    .credit { display: block; margin-top: 5px; color: var(--ink); font-weight: 700; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .tooltip { position: fixed; z-index: 20; max-width: 290px; padding: 10px 12px; color: white; background: #352b43; border-radius: 9px; box-shadow: 0 10px 30px rgba(0,0,0,.2); font-size: .78rem; line-height: 1.5; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+    .tooltip.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 980px) {
+      .workspace { grid-template-columns: 1fr; }
+      .input-panel { position: static; }
+      .support { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 20px, 1440px); }
+      header { padding-top: calc(15px + env(safe-area-inset-top)); }
+      .brand { align-items: flex-start; gap: 11px; }
+      .brand-mark { width: 42px; height: 42px; border-radius: 12px; }
+      .eyebrow { font-size: .67rem; letter-spacing: .08em; }
+      h1 { font-size: 1.36rem; }
+      .lede { margin-top: 13px; font-size: .9rem; }
+      .field-row, .cards, .glossary { grid-template-columns: 1fr; }
+      .pattern-chart { height: 270px; }
+      .results-panel, .support .panel { padding: 14px; }
+      .form, .panel-head { padding-left: 16px; padding-right: 16px; }
+      .panel-head { padding-top: 17px; padding-bottom: 14px; }
+      .form { padding-top: 16px; padding-bottom: 18px; }
+      input, select { min-height: 50px; font-size: 16px; }
+      .button { min-height: 48px; }
+      .info-button { width: 44px; height: 44px; }
+      .metrics { grid-template-columns: 1fr 1fr 1fr; }
+      .mini-chart { height: 165px; }
+      .result-card { min-height: 350px; padding: 16px; }
+      .support { gap: 14px; margin-top: 14px; padding-bottom: 30px; }
+      .section-head { align-items: flex-start; }
+    }
+    @media (display-mode: standalone) { .install-note { display: none; } }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M15 6v20M14 14c-3-5-9-4-9 4 0 6 4 8 8 5M18 14c3-5 9-4 9 4 0 6-4 8-8 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="eyebrow">LOCAL EXCEL · ON-DEVICE</div><h1>肺機能 LMS リファレンス <span class="version-badge">第5版・試作</span></h1></div>
+    </div>
+    <p class="lede">利用者が選択した公式Excelを端末内で読み込み、そのセルと数式から予測値・正常下限値（LLN）・Z-scoreを表示します。Excelの係数・予測式はこのアプリに収録していません。</p>
+    <p class="disclaimer-brief">本アプリは教育・学習用であり、診断や診療の代替ではありません。<a href="#disclaimer">免責事項</a></p>
+    <div class="install-note" id="install-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0-11L8 7m4-4 4 4M6 10H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>第5版 Excel読込・端末内計算版：</strong>Safariの共有ボタンから「ホーム画面に追加」できます。Excelは初回に選択し、この端末内にだけ保存します。</div>
+    </div>
+    <div id="offline-note" class="offline-note" role="status">オフラインです。保存済みの計算機能はそのまま利用できます。</div>
+  </header>
+
+  <main class="shell">
+    <div class="workspace">
+      <aside class="panel input-panel" aria-labelledby="input-title">
+        <div class="panel-head"><h2 id="input-title">Excelと入力値</h2><p>先に公式Excelを読み込んでください</p></div>
+        <form id="calculator" class="form" novalidate>
+          <section class="workbook-box" aria-labelledby="workbook-title">
+            <h3 id="workbook-title">計算用Excel</h3>
+            <p><a href="https://www.jrs.or.jp/activities/guidelines/statement/20220428151435.html" target="_blank" rel="noopener noreferrer">日本呼吸器学会の配布ページ</a>からExcelをダウンロードし、下のボタンで選択します。</p>
+            <input class="sr-only" id="workbook-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <div class="workbook-actions">
+              <button class="button primary" type="button" id="choose-workbook">Excelを選択</button>
+              <button class="button secondary" type="button" id="remove-workbook" hidden>端末から削除</button>
+            </div>
+            <div id="workbook-meta" class="workbook-meta" role="status" aria-live="polite">未読込：計算機能は停止しています。</div>
+            <div class="privacy-seal">🔒 Excelと入力値を外部送信しません</div>
+          </section>
+          <fieldset id="input-fields" disabled>
+          <div class="field-row">
+            <div class="field"><label for="sex">性別</label><select id="sex"><option value="male">男性</option><option value="female">女性</option></select></div>
+            <div class="field"><label for="age">年齢 <span class="unit">歳</span></label><input id="age" type="number" inputmode="decimal" min="0" step="0.1" value="40"></div>
+          </div>
+          <div class="field"><label for="height">身長 <span class="unit">cm</span></label><input id="height" type="number" inputmode="decimal" min="0" step="0.1" value="171"></div>
+          <p class="hint">性別を変更すると、入力補助として平均身長付近（男性171 cm／女性158 cm）を入れます。</p>
+          <div class="field-row">
+            <div class="field"><label for="fev1"><span data-tip="1秒量。最大吸気後、努力性呼出の最初の1秒間に呼出した量。">FEV₁</span><span class="unit">L</span></label><input id="fev1" type="number" inputmode="decimal" step="0.01" placeholder="実測値を入力（任意）"></div>
+            <div class="field"><label for="fvc"><span data-tip="努力性肺活量。最大吸気位から最大努力で最後まで呼出した量。">FVC</span><span class="unit">L</span></label><input id="fvc" type="number" inputmode="decimal" step="0.01" placeholder="実測値を入力（任意）"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="vc"><span data-tip="肺活量。最大吸気位からゆっくり最大呼出した量。">VC</span><span class="unit">L</span></label><input id="vc" type="number" inputmode="decimal" step="0.01" placeholder="実測値を入力（任意）"></div>
+            <div class="field"><label for="ratio"><span data-tip="1秒率。FEV₁をFVCで割った比をパーセントで表示・入力します。">FEV₁/FVC</span><span class="unit">%</span></label><input id="ratio" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="自動計算または入力（任意）"></div>
+          </div>
+          <div class="ratio-guide"><strong>FEV₁とFVCの両方を入力すると、FEV₁/FVCを自動計算します。</strong>自動計算後の値は上書きできます。FEV₁/FVCだけを入力することもできます。<span id="ratio-source">現在：FEV₁とFVCの入力待ち</span></div>
+          <div class="field"><label for="pvc"><span data-tip="予測肺活量に対する実測VCの割合。VCを予測VCで割り、パーセントで表します。">%VC</span><span class="unit">%</span></label><input id="pvc" type="number" inputmode="decimal" min="0" step="0.1" placeholder="自動計算または入力（任意）"></div>
+          <div class="ratio-guide"><strong>VCを入力すると、予測VCを用いて%VCを自動計算します。</strong>自動計算後の値は上書きできます。%VCだけを入力することもできます。<span id="pvc-source">現在：VCの入力待ち（%VCだけの入力も可）</span></div>
+          <div class="actions"><button class="button primary" type="submit">計算する</button><button class="button secondary" type="button" id="reset">初期値</button></div>
+          <div id="status" class="status warn" role="status" aria-live="polite">公式Excelを読み込むと計算できます。</div>
+          </fieldset>
+        </form>
+      </aside>
+
+      <section class="panel results-panel" aria-labelledby="result-title">
+        <div class="section-head"><div><h2 id="result-title">計算結果</h2><p>読み込んだExcelの数式を端末内で評価した結果です</p></div><span class="badge">Excel読込版</span></div>
+        <div id="cards" class="cards">
+          <div id="metric-cards" class="metric-cards"></div>
+          <section class="pattern-panel" aria-labelledby="pattern-title">
+            <div class="pattern-head"><div><h3 id="pattern-title">換気パターン判定図</h3><p>FEV₁/FVCと%VCを入力すると、個人別LLNで区分した図に点を表示します。</p></div></div>
+            <span id="pattern-status" class="sr-only" aria-live="polite">実測値の入力待ち</span>
+            <canvas id="pattern-chart" class="pattern-chart" role="img" aria-label="FEV₁/FVCと%VCによる換気パターン判定図"></canvas>
+            <p class="pattern-caution">拘束性・混合性はスパイロメトリー上の「疑い」です。確定にはTLC（全肺気量）の測定が必要です。</p>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div class="support">
+      <section class="panel"><h2>略語と指標</h2><dl class="glossary">
+        <div><dt>FEV₁</dt><dd>Forced Expiratory Volume in 1 second。1秒量。</dd></div>
+        <div><dt>FVC</dt><dd>Forced Vital Capacity。努力性肺活量。</dd></div>
+        <div><dt>VC</dt><dd>Vital Capacity。肺活量。</dd></div>
+        <div><dt>%VC</dt><dd>実測VCを予測VCで除した割合。VCから自動計算でき、直接入力もできます。</dd></div>
+        <div><dt>FEV₁/FVC</dt><dd>1秒率。FEV₁をFVCで除した比。</dd></div>
+        <div><dt>LLN</dt><dd>Lower Limit of Normal。正常下限値。本Excelでは第5百分位。</dd></div>
+        <div><dt>Z-score</dt><dd>基準分布の中心からの隔たりを標準偏差単位で表した値。</dd></div>
+        <div><dt>L / M / S</dt><dd>Lは歪度、Mは中央値（予測値）、Sはばらつきを表すLMSパラメータ。</dd></div>
+        <div><dt>下側百分位</dt><dd>基準集団で、そのZ-score以下に位置する割合。</dd></div>
+      </dl></section>
+      <section class="panel"><h2>計算とエラーの扱い</h2>
+        <details open><summary>Excel読込版の計算</summary><p>選択したExcelの「基準値」シートへ入力値を当てはめ、同ブック内のセル参照と数式を端末内で評価します。Microsoft Excelそのものを起動する方式ではありません。対応する関数は、この公式ブックで使用されている IF・LOOKUP・EXP・LN です。</p></details>
+        <details><summary>プライバシー</summary><p>Excelファイルと入力値はブラウザ内だけで処理し、サーバーへ送信しません。Excelはこの端末のブラウザ保存領域へ保存できますが、年齢・身長・実測値は保存しません。「端末から削除」で保存したExcelを消去できます。</p></details>
+        <details><summary>入力範囲外とExcelエラー</summary><p>読み込んだ数式が返す #NUM!・#N/A・#VALUE!・#DIV/0! などは「計算不可」として表示し、エラー記号も併記します。年齢や身長の適用範囲は、配布元資料とExcelの説明を確認してください。</p></details>
+        <details><summary>責任の範囲</summary><p>予測式・係数は利用者が読み込んだExcelに由来します。本アプリは、そのブックを読み取り、対応数式を評価して表示するためのUIです。表示結果は教育・学習用途に限って確認してください。</p></details>
+      </section>
+    </div>
+    <section id="disclaimer" class="panel disclaimer-panel" aria-labelledby="disclaimer-title"><h2 id="disclaimer-title">免責事項</h2><p>本アプリは診断や診療の代替ではなく、教育・学習の目的に提供しています。内容の正確性は保証されません。使用者の責任でご使用ください。</p></section>
+  </main>
+  <footer class="shell">計算用Excel：一般社団法人日本呼吸器学会「<a href="https://www.jrs.or.jp/activities/guidelines/statement/20220428151435.html" target="_blank" rel="noopener noreferrer">LMS法による日本人のスパイロメトリー新基準値</a>」（2014年10月、2022年4月更新）。本アプリはExcelを同梱していません。Excel読取：SheetJS CE 0.20.3（<a href="./vendor/LICENSE.sheetjs.txt" target="_blank" rel="noopener">Apache 2.0</a>）。<span class="credit">第5版 Excel読込・端末内計算版（試作）｜著作制作：村上　徹</span></footer>
+  <div id="tooltip" class="tooltip" role="tooltip"></div>
+
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
