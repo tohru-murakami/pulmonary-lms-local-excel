@@ -73,13 +73,15 @@ python3 -m http.server 8000 --directory dist
 
 換気パターンの表示は参考情報です。拘束性・混合性の確定にはTLC（全肺気量）の測定が必要です。
 
-## 著作・ライセンス
+## 著作権・ライセンス
 
-著作制作：村上　徹
+著作権者：村上 徹
 
-本アプリ独自部分には、現時点で明示的なオープンソースライセンスを付与していません。リポジトリの公開は、本アプリ独自部分の複製、改変または再配布を許諾するものではありません。
+本アプリの独自部分は、MIT Licenseのもとで提供します。ライセンス全文は、リポジトリ直下の `LICENSE` を参照してください。
 
-Excelファイルの読み取りには、SheetJS Community Edition 0.20.3を使用しています。SheetJS CEはApache License 2.0で提供されており、ライセンス文書を `dist/vendor/LICENSE.sheetjs.txt` に収録しています。
+Excelファイルの読み取りには、SheetJS Community Edition 0.20.3を使用しています。SheetJS CEはApache License 2.0で提供されており、ライセンス文書を `dist/vendor/LICENSE.sheetjs.txt` に収録しています。本アプリ独自部分のMIT Licenseは、SheetJS CEには適用されません。
+
+日本呼吸器学会のExcelファイルは本アプリおよび本リポジトリには含まれません。各利用者が別途取得し、その利用条件および許諾の範囲に従って使用してください。
 
 ## ダウンロード
 
