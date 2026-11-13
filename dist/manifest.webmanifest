@@ -1,5 +1,5 @@
 {
-  "name": "肺機能 LMS リファレンス 第5版 Excel読込版",
+  "name": "肺機能 LMS リファレンス Excel読込・端末内計算版 v1.0（261112）",
   "short_name": "肺機能LMS Excel",
   "description": "利用者が選択した公式Excelを端末内で読み込み、予測値・LLN・Z-scoreを表示する教育用ツール",
   "lang": "ja",
