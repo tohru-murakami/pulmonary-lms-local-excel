@@ -1,8 +1,9 @@
-const CACHE_NAME = 'pulmonary-lms-local-excel-v1.0-261112';
+const CACHE_NAME = 'pulmonary-lms-local-excel-v1.0-261112-license-1';
 const APP_FILES = [
   './',
   './index.html',
   './app.js',
+  './LICENSE.txt',
   './vendor/xlsx.full.min.js',
   './vendor/LICENSE.sheetjs.txt',
   './icon.svg',

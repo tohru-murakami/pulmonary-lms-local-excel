@@ -297,11 +297,12 @@
         <details><summary>プライバシー</summary><p>Excelファイルと入力値はブラウザ内だけで処理し、サーバーへ送信しません。Excelはこの端末のブラウザ保存領域へ保存できますが、年齢・身長・実測値は保存しません。「端末から削除」で保存したExcelを消去できます。</p></details>
         <details><summary>入力範囲外とExcelエラー</summary><p>読み込んだ数式が返す #NUM!・#N/A・#VALUE!・#DIV/0! などは「計算不可」として表示し、エラー記号も併記します。年齢や身長の適用範囲は、配布元資料とExcelの説明を確認してください。</p></details>
         <details><summary>責任の範囲</summary><p>予測式・係数は利用者が読み込んだExcelに由来します。本アプリは、そのブックを読み取り、対応数式を評価して表示するためのUIです。表示結果は教育・学習用途に限って確認してください。</p></details>
+        <details><summary>著作権・ライセンス</summary><p>本アプリの独自部分は <a href="./LICENSE.txt" target="_blank" rel="noopener">MIT License</a> のもとで提供します。Excel読取に使用するSheetJS Community Edition 0.20.3は <a href="./vendor/LICENSE.sheetjs.txt" target="_blank" rel="noopener">Apache License 2.0</a> です。日本呼吸器学会の計算用Excel、予測式、係数表および年齢別splineデータはMIT Licenseの対象ではなく、本アプリにも収録していません。</p></details>
       </section>
     </div>
     <section id="disclaimer" class="panel disclaimer-panel" aria-labelledby="disclaimer-title"><h2 id="disclaimer-title">免責事項</h2><p>本アプリは診断や診療の代替ではなく、教育・学習の目的に提供しています。内容の正確性は保証されません。使用者の責任でご使用ください。2026年11月12日付の日本呼吸器学会の使用許諾（No.08409）は、同学会による本アプリの監修、推奨または計算結果の保証を意味するものではありません。</p></section>
   </main>
-  <footer class="shell">計算用Excel：一般社団法人日本呼吸器学会「<a href="https://www.jrs.or.jp/activities/guidelines/statement/20220428151435.html" target="_blank" rel="noopener noreferrer">LMS法による日本人のスパイロメトリー新基準値</a>」（2014年10月、2022年4月更新）。使用許諾：2026年11月12日付、No.08409。本アプリはExcelを同梱していません。Excel読取：SheetJS CE 0.20.3（<a href="./vendor/LICENSE.sheetjs.txt" target="_blank" rel="noopener">Apache 2.0</a>）。<span class="credit">Excel読込・端末内計算版 v1.0（261112）｜著作制作：村上　徹</span></footer>
+  <footer class="shell">計算用Excel：一般社団法人日本呼吸器学会「<a href="https://www.jrs.or.jp/activities/guidelines/statement/20220428151435.html" target="_blank" rel="noopener noreferrer">LMS法による日本人のスパイロメトリー新基準値</a>」（2014年10月、2022年4月更新）。使用許諾：2026年11月12日付、No.08409。本アプリはExcelを同梱していません。本アプリ独自部分：<a href="./LICENSE.txt" target="_blank" rel="noopener">MIT License</a>。Excel読取：SheetJS CE 0.20.3（<a href="./vendor/LICENSE.sheetjs.txt" target="_blank" rel="noopener">Apache 2.0</a>）。<span class="credit">Excel読込・端末内計算版 v1.0（261112）｜著作制作：村上　徹</span></footer>
   <div id="tooltip" class="tooltip" role="tooltip"></div>
 
   <script src="./vendor/xlsx.full.min.js"></script>
