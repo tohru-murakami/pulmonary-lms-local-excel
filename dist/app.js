@@ -554,7 +554,18 @@
   window.addEventListener('resize',drawAllCharts);
   const offlineNote=document.querySelector('#offline-note'),updateConnectionState=()=>offlineNote.classList.toggle('show',!navigator.onLine);window.addEventListener('online',updateConnectionState);window.addEventListener('offline',updateConnectionState);updateConnectionState();
   if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-  window.__LMS_EXCEL_TEST__={FormulaParser,WorkbookRuntime,parseWorkbook,calculateResults,ExcelError,getWorkbook:()=>workbook};
+  window.__LMS_EXCEL_TEST__={
+    FormulaParser,
+    WorkbookRuntime,
+    parseWorkbook,
+    calculateResults,
+    ExcelError,
+    getWorkbook:()=>workbook,
+    loadWorkbookForTest:(buffer)=>{
+      workbook=parseWorkbook(new Uint8Array(buffer));
+      return {sheetNames:[...workbook.SheetNames]};
+    }
+  };
 
   renderCards(); bindTooltips();
   loadSavedWorkbook().then(saved=>{if(!saved)return;try{setWorkbookReady(parseWorkbook(saved.buffer),saved.name||'保存済みExcel');}catch(error){clearWorkbookUi(`保存済みExcelを開けません：${error.message}`);}}).catch(()=>{});

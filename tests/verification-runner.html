@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>肺機能 LMS リファレンス｜公式Excel照合</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; }
+    body { margin: 0; background: #f6f3fa; color: #352b43; }
+    main { width: min(960px, calc(100% - 32px)); margin: 32px auto; }
+    section { background: white; border: 1px solid #ded5e7; border-radius: 18px; padding: 22px; box-shadow: 0 12px 30px rgba(58,39,78,.08); }
+    h1 { margin-top: 0; font-size: 1.45rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    button, input::file-selector-button { border: 0; border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+    button { background: #654486; color: white; }
+    button:disabled { opacity: .5; cursor: wait; }
+    #status { margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: #f1edf5; }
+    #status.pass { background: #e7f4eb; color: #245b38; }
+    #status.fail { background: #fbeaea; color: #8a2f2f; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: .92rem; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e8e1ee; text-align: right; }
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+    .pass-text { color: #24713e; font-weight: 700; }
+    .fail-text { color: #a13030; font-weight: 700; }
+    details { margin-top: 18px; }
+    pre { max-height: 360px; overflow: auto; background: #211b29; color: #f5eefc; padding: 14px; border-radius: 12px; font-size: .78rem; }
+    iframe { position: fixed; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>公式Excelとの一括照合</h1>
+      <p>公式Excelをブラウザ内だけで読み込み、記録済みの20例をWebアプリで再計算します。Excelと入力値は外部送信しません。</p>
+      <div class="controls">
+        <input id="excel-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <button id="run" type="button">20例を照合</button>
+      </div>
+      <div id="status">Excelを選択してください。</div>
+      <div id="summary"></div>
+      <details><summary>詳細データ</summary><pre id="details"></pre></details>
+    </section>
+  </main>
+  <iframe id="app-frame" title="計算エンジン"></iframe>
+  <script>
+    (() => {
+      const TOLERANCE = 1e-9;
+      const fileInput = document.querySelector('#excel-file');
+      const runButton = document.querySelector('#run');
+      const status = document.querySelector('#status');
+      const summary = document.querySelector('#summary');
+      const details = document.querySelector('#details');
+      const frame = document.querySelector('#app-frame');
+
+      const waitFor = async (predicate, timeout = 15000) => {
+        const started = Date.now();
+        while (!predicate()) {
+          if (Date.now() - started > timeout) throw new Error('処理がタイムアウトしました。');
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      };
+
+      const loadEngine = async () => {
+        if (frame.contentWindow?.__LMS_EXCEL_TEST__) return frame.contentWindow;
+        frame.src = `../dist/index.html?verification=${Date.now()}`;
+        await new Promise((resolve, reject) => {
+          frame.onload = resolve;
+          setTimeout(() => reject(new Error('アプリの読込がタイムアウトしました。')), 15000);
+        });
+        await waitFor(() => frame.contentWindow?.__LMS_EXCEL_TEST__);
+        return frame.contentWindow;
+      };
+
+      const loadWorkbook = async (file) => {
+        const engine = await loadEngine();
+        const buffer = await file.arrayBuffer();
+        engine.__LMS_EXCEL_TEST__.loadWorkbookForTest(buffer);
+        return engine;
+      };
+
+      const metricExpected = (testCase, metric) => {
+        const raw = testCase.raw[metric];
+        const measured = testCase.input[metric];
+        return { M: raw.pred, LLN: raw.lln, Z: raw.z, percent: raw.pct ?? measured / raw.pred * 100 };
+      };
+
+      const compareMetric = (caseId, metric, expected, actual, rows) => {
+        for (const key of ['M', 'LLN', 'Z', 'percent']) {
+          const a = Number(actual[key]);
+          const e = Number(expected[key]);
+          const difference = Math.abs(a - e);
+          rows.push({ caseId, metric, item: key, excel: e, app: a, difference, pass: Number.isFinite(difference) && difference <= TOLERANCE });
+        }
+      };
+
+      const run = async (file) => {
+        runButton.disabled = true;
+        status.className = '';
+        status.textContent = '公式Excelを読み込み、20例を計算しています…';
+        summary.innerHTML = '';
+        details.textContent = '';
+        try {
+          const expectedFile = await fetch('./official-excel-expected-2026-11-14.json').then(response => response.json());
+          const engine = await loadWorkbook(file);
+          const api = engine.__LMS_EXCEL_TEST__;
+          const rows = [];
+          const caseRows = [];
+
+          for (const testCase of expectedFile.cases) {
+            const c = testCase.input;
+            const input = {
+              sex: c.sex === 1 ? 'male' : 'female',
+              age: c.age,
+              height: c.height,
+              measured: { fev1: c.fev1, fvc: c.fvc, vc: c.vc, ratio: c.ratio, pvc: null },
+            };
+            const first = api.calculateResults(input);
+            input.measured.pvc = c.vc / first.vc.M * 100;
+            const actual = api.calculateResults(input);
+
+            compareMetric(c.id, 'fev1', metricExpected(testCase, 'fev1'), actual.fev1, rows);
+            compareMetric(c.id, 'fvc', metricExpected(testCase, 'fvc'), actual.fvc, rows);
+            compareMetric(c.id, 'vc', metricExpected(testCase, 'vc'), actual.vc, rows);
+            compareMetric(c.id, 'ratio', metricExpected(testCase, 'ratio'), actual.ratio, rows);
+            compareMetric(c.id, 'pvc', {
+              M: 100,
+              LLN: testCase.raw.vc.lln / testCase.raw.vc.pred * 100,
+              Z: testCase.raw.vc.z,
+              percent: testCase.raw.vc.pct,
+            }, actual.pvc, rows);
+
+            const ownRows = rows.filter(row => row.caseId === c.id);
+            caseRows.push({
+              id: c.id,
+              sex: c.sex === 1 ? '男性' : '女性',
+              age: c.age,
+              height: c.height,
+              comparisons: ownRows.length,
+              failures: ownRows.filter(row => !row.pass).length,
+              maxDifference: Math.max(...ownRows.map(row => row.difference)),
+            });
+          }
+
+          const failures = rows.filter(row => !row.pass);
+          const maxDifference = Math.max(...rows.map(row => row.difference));
+          const report = {
+            testedAt: new Date().toISOString(),
+            source: expectedFile.sourceFile,
+            sourceSha256: expectedFile.sha256,
+            tolerance: TOLERANCE,
+            cases: caseRows.length,
+            comparisons: rows.length,
+            failures: failures.length,
+            maxDifference,
+            caseResults: caseRows,
+            failedComparisons: failures,
+          };
+
+          status.className = failures.length ? 'fail' : 'pass';
+          status.textContent = failures.length
+            ? `${caseRows.length}例中、${failures.length}項目が許容差を超えました。`
+            : `${caseRows.length}例・${rows.length}項目がすべて一致しました。`;
+          summary.innerHTML = `<table><thead><tr><th>例</th><th>性別</th><th>年齢</th><th>身長</th><th>比較項目</th><th>不一致</th><th>最大差</th></tr></thead><tbody>${caseRows.map(row => `<tr><td>${row.id}</td><td>${row.sex}</td><td>${row.age}</td><td>${row.height} cm</td><td>${row.comparisons}</td><td class="${row.failures ? 'fail-text' : 'pass-text'}">${row.failures}</td><td>${row.maxDifference.toExponential(3)}</td></tr>`).join('')}</tbody></table>`;
+          details.textContent = JSON.stringify(report, null, 2);
+          window.__VERIFICATION_REPORT__ = report;
+        } catch (error) {
+          status.className = 'fail';
+          status.textContent = `照合を実行できませんでした：${error.message}`;
+          window.__VERIFICATION_REPORT__ = { error: error.message };
+        } finally {
+          runButton.disabled = false;
+        }
+      };
+
+      runButton.addEventListener('click', () => {
+        const file = fileInput.files?.[0];
+        if (!file) {
+          status.className = 'fail';
+          status.textContent = '公式Excelを選択してください。';
+          return;
+        }
+        run(file);
+      });
+
+      const params = new URLSearchParams(location.search);
+      const source = params.get('source');
+      if (source) {
+        fetch(source)
+          .then(response => {
+            if (!response.ok) throw new Error(`Excelを取得できません（${response.status}）。`);
+            return response.blob();
+          })
+          .then(blob => run(new File([blob], 'verification-source.xlsx', { type: blob.type })))
+          .catch(error => {
+            status.className = 'fail';
+            status.textContent = error.message;
+            window.__VERIFICATION_REPORT__ = { error: error.message };
+          });
+      }
+    })();
+  </script>
+</body>
+</html>

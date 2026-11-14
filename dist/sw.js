@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulmonary-lms-local-excel-v1.0-261112-license-1';
+const CACHE_NAME = 'pulmonary-lms-local-excel-v1.0-261112-verification-1';
 const APP_FILES = [
   './',
   './index.html',
